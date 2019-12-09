@@ -8,7 +8,7 @@ C# command line tool to query the events of all event logs ordered by time and e
 ## Generate:
 Compile with Compile.bat (no visual studio needed, but .Net 4.0).
 
-.Net 3.5 version in folder Net3.5.
+.Net 3.5 version in folder Net3.5 (obviously needs .Net 3.5 to compile and run).
 
 ## Description:
 C# command line tool to query the events of all event logs ordered by time in text or csv format.
