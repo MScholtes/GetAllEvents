@@ -17,7 +17,7 @@ A remote computer can be accessed.
 
 
 ## Parameters:
-(/ can be used instead of leading -)
+(/ can be used instead of the leading -, = can be used instead of the value introducing :)
  
 **-logname:\<LOGNAMES\>** comma separated list of event log names.<br />Queries all event logs if omitted (can be abbreviated as -log or -l or can be omitted).
 
