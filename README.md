@@ -16,8 +16,9 @@ C# command line tool to query the events of all event logs ordered by time in te
 A remote computer can be accessed.
 
 
-## Parameters (- can be used instead of leading /):
-
+## Parameters:
+(/ can be used instead of leading -)
+ 
 **-logname:\<LOGNAMES\>** comma separated list of event log names.<br />Queries all event logs if omitted (can be abbreviated as -log or -l or can be omitted).
 
 **-level:\<LEVEL\>** queries up to level \<LEVEL\>. Queries all events if omitted.<br />Level: Critical - 1, Error - 2, Warning - 3, Informational - 4, Verbose - 5
