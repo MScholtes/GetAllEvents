@@ -1,8 +1,8 @@
 // Markus Scholtes, 2019
 // Console program to query all events from all event logs (there are about 1200 in Windows 10 !)
-// Output is sorted by time
-// Output can be to file or console in text or csv format
-// A remote computer can be accessed
+// output is sorted by time
+// output can be to file or console in text or csv format
+// a remote computer can be accessed
 
 using System;
 using System.Collections.Generic;
@@ -21,8 +21,8 @@ using System.Reflection;
 [assembly:AssemblyCopyright("© Markus Scholtes 2019")]
 [assembly:AssemblyTrademark("")]
 [assembly:AssemblyCulture("")]
-[assembly:AssemblyVersion("1.0.0.0")]
-[assembly:AssemblyFileVersion("1.0.0.0")]
+[assembly:AssemblyVersion("1.0.0.1")]
+[assembly:AssemblyFileVersion("1.0.0.1")]
 
 
 class GetAllEvents
@@ -42,7 +42,7 @@ class GetAllEvents
 		}
 
 		// check if there is an unknown parameter
-		if (!parameter.CheckForUnknown(new string[] { "?", "h", "help", "l", "log", "logname", "c", "computer", "computername", "s", "start", "starttime", "e", "end", "endtime", "level", "csv", "f", "file", "filename", "q", "quiet" }))
+		if (!parameter.CheckForUnknown(new string[] { "?", "h", "help", "l", "log", "logname", "c", "computer", "computername", "s", "start", "starttime", "e", "end", "endtime", "level", "csv", "f", "file", "filename", "q", "quiet", "domainname", "domain", "d", "username", "user", "u", "password", "pass", "p" }))
 		{ // error reading command line
 			Console.Error.WriteLine("Unknown parameter error.");
 			return -1;
@@ -51,7 +51,7 @@ class GetAllEvents
 		if (parameter.Exist("?") || parameter.Exist("h") || parameter.Exist("help"))
 		{ // help wanted
 			Console.WriteLine("{0}\t\t\t\t\tMarkus Scholtes, 2019\n", System.AppDomain.CurrentDomain.FriendlyName);
-			Console.WriteLine("Program to determine the events of all event logs ordered by time.\n");
+			Console.WriteLine("Console program to determine the events of all event logs ordered by time.\n");
 			Console.WriteLine("{0} [[-logname:]<LOGNAMES>] [-level:<LEVEL>]", System.AppDomain.CurrentDomain.FriendlyName);
 			Console.WriteLine("    [-starttime:<STARTTIME>] [-endtime:<ENDTIME>] [-computername:<COMPUTER>]");
 			Console.WriteLine("    [-filename:<FILENAME>] [-csv] [-quiet] [-?|-help]");
@@ -66,6 +66,12 @@ class GetAllEvents
 			Console.WriteLine("    -e). Default is now.");
 			Console.WriteLine("-computername:<COMPUTER> name of computer to query (can be abbreviated as");
 			Console.WriteLine("    -computer or -c). Default is the local system.");
+			Console.WriteLine("-domainname:<DOMAIN> name of windows domain to logon (can be abbreviated as");
+			Console.WriteLine("    -domain or -d). Default is to pass through current credentials.");
+			Console.WriteLine("-username:<USER> name of windows user to logon (can be abbreviated as -user or");
+			Console.WriteLine("    -u). Default is to pass through current credentials.");
+			Console.WriteLine("-password:<PASSWORD> password of windows user to logon (can be abbreviated as");
+			Console.WriteLine("    -pass or -p). Default is to pass through current credentials.");
 			Console.WriteLine("-filename:<FILENAME> name of the file in which the results are output (can be");
 			Console.WriteLine("    abbreviated as -file or -f). Default is output to the console.");
 			Console.WriteLine("-csv output format \"comma separated\" instead of output format text.");
@@ -74,9 +80,10 @@ class GetAllEvents
 			Console.WriteLine("\nExamples:");
 			Console.WriteLine("{0} -start:10:00 -end:11:00", System.AppDomain.CurrentDomain.FriendlyName);
 			Console.WriteLine("{0} System,Setup,Application -Computer=REMOTESYSTEM", System.AppDomain.CurrentDomain.FriendlyName);
-			Console.WriteLine("{0} /level:2 /q /CSV /file:OnlyErrors.csv", System.AppDomain.CurrentDomain.FriendlyName);
+			Console.WriteLine("{0} /logname=Application /level:2 /q /CSV /file:OnlyErrors.csv", System.AppDomain.CurrentDomain.FriendlyName);
 			Console.WriteLine("{0} \"/starttime:2019/11/29 10:00\" \"/endtime:2019/11/29 11:00\"", System.AppDomain.CurrentDomain.FriendlyName);
 			Console.WriteLine("{0} \"/s=2019/12/08 10:09:49.450\" \"/e=2019/12/08 10:09:49.850\"", System.AppDomain.CurrentDomain.FriendlyName);
+			Console.WriteLine("{0} /log=Security -Computer=REMOTE /D:DOM /U:Admin /P=NoP@ss", System.AppDomain.CurrentDomain.FriendlyName);
 			return 0;
 		}
 
@@ -151,8 +158,19 @@ class GetAllEvents
 			}
 		}
 
-		// connect to remote computer in parameter /c, /computer or /computername or to "localhost"
-		EventLogSession session = new EventLogSession(parameter.ValueOrDefault("c", parameter.ValueOrDefault("computer", parameter.ValueOrDefault("computername", "localhost"))));
+		EventLogSession session;
+		string userName = parameter.ValueOrDefault("u", parameter.ValueOrDefault("user", parameter.Value("username")));
+		if (userName == "")
+			// connect to remote computer in parameter /c, /computer or /computername or to "localhost" with existent credentials
+			session = new EventLogSession(parameter.ValueOrDefault("c", parameter.ValueOrDefault("computer", parameter.ValueOrDefault("computername", "localhost"))));
+		else
+		{
+			string domainName = parameter.ValueOrDefault("d", parameter.ValueOrDefault("domain", parameter.Value("domainname")));
+			string passWord = parameter.ValueOrDefault("p", parameter.ValueOrDefault("pass", parameter.Value("password")));
+
+			// connect to remote computer in parameter /c, /computer or /computername or to "localhost" with credentials in parameters
+			session = new EventLogSession(parameter.ValueOrDefault("c", parameter.ValueOrDefault("computer", parameter.ValueOrDefault("computername", "localhost"))), domainName, userName, new System.Net.NetworkCredential("", passWord).SecurePassword, SessionAuthentication.Default);
+		}
 
 		int outputMode = 1; // 1 - Text, 2 - CSV
 		if (parameter.Exist("csv")) outputMode = 2;
