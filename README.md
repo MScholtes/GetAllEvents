@@ -1,5 +1,5 @@
 # GetAllEvents
-*Version 1.0.0.2, 2020-01-12 by Markus Scholtes*
+**Version 1.0.0.2, 2020-01-12 by Markus Scholtes**
 
 C# command line tool to query the events of all event logs ordered by time and export to text or csv file.
 
