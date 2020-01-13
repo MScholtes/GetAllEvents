@@ -66,5 +66,5 @@ Display of results in Grid view (WPF)
 ### 1.0.0.1 / 2019-12-12
 Remote system access with credentials
 
-### 1.0.0.0 / 2019-11-19
+### 1.0.0.0 / 2019-11-29
 Initial release
