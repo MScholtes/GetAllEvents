@@ -1,16 +1,16 @@
 # GetAllEvents
-V1.0.0.2, 2020-01-12
+*Version 1.0.0.2, 2020-01-12 by Markus Scholtes*
 
 C# command line tool to query the events of all event logs ordered by time and export to text or csv file.
 
-New in V1.0.0.2: Display in graphical (WPF) grid view.
+**New in V1.0.0.2:** Display in graphical (WPF) grid view.
 
 ****
 
 ## Generate:
 Compile with Compile.bat (no visual studio needed, but .Net 4.0).
 
-GetAllEventsCLI.cs is a version without graphical (WPF) support because on systems without **Desktop Experience** installed the "WPF version" crashes.
+*GetAllEventsCLI.cs* is a version without graphical (WPF) support because on systems without **Desktop Experience** installed the *"WPF version"* crashes.
 
 There is a .Net 3.5 version in folder Net3.5 that lacks grid view and credential support (obviously needs .Net 3.5 to compile and run).
 
