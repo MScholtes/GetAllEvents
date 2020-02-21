@@ -7,6 +7,10 @@ C# command line tool to query the events of all event logs ordered by time and e
 
 ****
 
+## Download:
+Download binaries from the Script Center web page
+[GetAllEvents: Query all events from all event logs]( https://gallery.technet.microsoft.com/scriptcenter/GetAllEvents-Query-all-d0a40b20) or compile yourself...
+
 ## Generate:
 Compile with Compile.bat (no visual studio needed, but .Net 4.0).
 
