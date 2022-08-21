@@ -1,4 +1,4 @@
-// Markus Scholtes, 2019
+// Markus Scholtes, 2019, 2020, 2022
 // Console program to query all events from all event logs (there are about 1200 in Windows 10 !)
 // output is sorted by time
 // output can be to file or console in text or csv format
@@ -18,11 +18,11 @@ using System.Reflection;
 [assembly:AssemblyConfiguration("")]
 [assembly:AssemblyCompany("MS")]
 [assembly:AssemblyProduct("GetAllEvents")]
-[assembly:AssemblyCopyright("© Markus Scholtes 2019")]
+[assembly:AssemblyCopyright("© Markus Scholtes 2022")]
 [assembly:AssemblyTrademark("")]
 [assembly:AssemblyCulture("")]
-[assembly:AssemblyVersion("1.0.0.1")]
-[assembly:AssemblyFileVersion("1.0.0.1")]
+[assembly:AssemblyVersion("1.0.1.0")]
+[assembly:AssemblyFileVersion("1.0.1.0")]
 
 
 class GetAllEvents
@@ -42,7 +42,7 @@ class GetAllEvents
 		}
 
 		// check if there is an unknown parameter
-		if (!parameter.CheckForUnknown(new string[] { "?", "h", "help", "l", "log", "logname", "c", "computer", "computername", "s", "start", "starttime", "e", "end", "endtime", "level", "csv", "f", "file", "filename", "q", "quiet", "domainname", "domain", "d", "username", "user", "u", "password", "pass", "p" }))
+		if (!parameter.CheckForUnknown(new string[] { "?", "h", "help", "l", "log", "logname", "sec", "security", "c", "computer", "computername", "s", "start", "starttime", "e", "end", "endtime", "level", "logalways", "csv", "f", "file", "filename", "q", "quiet", "domainname", "domain", "d", "username", "user", "u", "password", "pass", "p" }))
 		{ // error reading command line
 			Console.Error.WriteLine("Unknown parameter error.");
 			return -1;
@@ -50,16 +50,20 @@ class GetAllEvents
 
 		if (parameter.Exist("?") || parameter.Exist("h") || parameter.Exist("help"))
 		{ // help wanted
-			Console.WriteLine("{0}\t\t\t\t\tMarkus Scholtes, 2019\n", System.AppDomain.CurrentDomain.FriendlyName);
-			Console.WriteLine("Console program to determine the events of all event logs ordered by time.\n");
-			Console.WriteLine("{0} [[-logname:]<LOGNAMES>] [-level:<LEVEL>]", System.AppDomain.CurrentDomain.FriendlyName);
+			Console.WriteLine("{0}\t\t\t\t\tMarkus Scholtes, 2022\n", System.AppDomain.CurrentDomain.FriendlyName);
+			Console.WriteLine("Console program to determine the events of all event logs ordered by time.");
+			Console.WriteLine("Security log and events of level LogAlways are omitted per default.\n");
+			Console.WriteLine("{0} [[-logname:]<LOGNAMES>] [-security] [-level:<LEVEL>]", System.AppDomain.CurrentDomain.FriendlyName);
 			Console.WriteLine("    [-starttime:<STARTTIME>] [-endtime:<ENDTIME>] [-computername:<COMPUTER>]");
+			Console.WriteLine("    [-domainname:<DOMAIN>] [-username:<USER>] [-password:<PASSWORD>]");
 			Console.WriteLine("    [-filename:<FILENAME>] [-csv] [-quiet] [-?|-help]");
 			Console.WriteLine("\nParameters:");
 			Console.WriteLine("-logname:<LOGNAMES> comma separated list of event log names. Queries all event");
 			Console.WriteLine("    logs if omitted (can be abbreviated as -log or -l or can be omitted).");
+			Console.WriteLine("-security include Security log (can be abbreviated as -sec).");
 			Console.WriteLine("-level:<LEVEL> queries up to level <LEVEL>. Queries all events if omitted.");
 			Console.WriteLine("    Level: Critical - 1, Error - 2, Warning - 3, Informational - 4, Verbose - 5");
+			Console.WriteLine("-logalways include events of level LogAlways (level 0).");
 			Console.WriteLine("-starttime:<STARTTIME> start time of events to query (can be abbreviated as");
 			Console.WriteLine("    -start or -s). Default is end time minus one hour.");
 			Console.WriteLine("-endtime:<ENDTIME> end time of events to query (can be abbreviated as -end or");
@@ -134,7 +138,7 @@ class GetAllEvents
 			return -1;
 		}
 
-		// get information level, 0 = default = return all events
+		// get information level, 0 = default = return all events but LogAlways
 		// Level: LogAlways - 0, Critical - 1, Error - 2, Warning - 3, Informational - 4, Verbose - 5
 		// there are different levels for auditing logs!
 		string informationLevel = parameter.Value("level");
@@ -157,6 +161,9 @@ class GetAllEvents
 				return -1;
 			}
 		}
+
+		bool bLogAlways = false; // process information level 0?
+		if (parameter.Exist("logalways")) bLogAlways = true;
 
 		EventLogSession session;
 		string userName = parameter.ValueOrDefault("u", parameter.ValueOrDefault("user", parameter.Value("username")));
@@ -183,11 +190,13 @@ class GetAllEvents
 		if (parameter.ValueOrDefault("l", parameter.ValueOrDefault("log", parameter.ValueOrDefault("logname", parameter.DefaultParameter()))) != "")
 		{ // yes, only read those logs
 			logNames = new List<string>(parameter.ValueOrDefault("l", parameter.ValueOrDefault("log", parameter.DefaultParameter())).Split(new char[] {',',';'}).Where(val => val.Trim() != "").Select(val => val.Trim()).ToArray());
+			if (parameter.Exist("security") || parameter.Exist("sec")) if (!logNames.Exists(x => x.ToLower() == "security")) logNames.Add("security");
 		}
 		else
 		{ // no parameter for log, read all logs
 			try { // retrieve all log names
 				logNames = new List<string>(session.GetLogNames());
+				if (!parameter.Exist("security") && !parameter.Exist("sec")) logNames.Remove("Security");
 			}
 			catch (Exception e)
 			{ // cannot retrieve log names
@@ -203,7 +212,7 @@ class GetAllEvents
 		List<EventEntry> eventList = new List<EventEntry>();
 		foreach (string name in logNames)
 		{ // query entries for all logs
-			if (GetEntries(ref eventList, name, session, startTime, endTime, maxLevel, outputMode, bQuiet)) logCount++;
+			if (GetEntries(ref eventList, name, session, startTime, endTime, maxLevel, bLogAlways, outputMode, bQuiet)) logCount++;
 		}
 
 		if (eventList.Count > 0)
@@ -270,16 +279,24 @@ class GetAllEvents
 		}
 	}
 
-	private static bool GetEntries(ref List<EventEntry> eventList, string logName, EventLogSession session, DateTime startTime, DateTime endTime, int maxLevel, int outputMode, bool bQuiet)
-	{
+	private static bool GetEntries(ref List<EventEntry> eventList, string logName, EventLogSession session, DateTime startTime, DateTime endTime, int maxLevel, bool bLogAlways, int outputMode, bool bQuiet)
+	{ // read all event log entries matching in EventEntry list
 		string eventQuery;
 		if (maxLevel == 0)
-			// query for all information levels
-			eventQuery = string.Format("*[System/TimeCreated/@SystemTime > '{0}'] and *[System/TimeCreated/@SystemTime <= '{1}']", startTime.ToUniversalTime().ToString("o"), endTime.ToUniversalTime().ToString("o"));
+		{ // query for all information levels
+			if (bLogAlways)
+			{ eventQuery = string.Format("*[System/TimeCreated/@SystemTime > '{0}'] and *[System/TimeCreated/@SystemTime <= '{1}']", startTime.ToUniversalTime().ToString("o"), endTime.ToUniversalTime().ToString("o")); }
+			else
+			{ eventQuery = string.Format("*[System/TimeCreated/@SystemTime > '{0}'] and *[System/TimeCreated/@SystemTime <= '{1}'] and *[System/Level > 0]", startTime.ToUniversalTime().ToString("o"), endTime.ToUniversalTime().ToString("o")); }
+		}
 		else
-			// level: LogAlways - 0, Critical - 1, Error - 2, Warning - 3, Informational - 4, Verbose - 5
+		{ // level: LogAlways - 0, Critical - 1, Error - 2, Warning - 3, Informational - 4, Verbose - 5
 			// there are different levels for auditing logs!
-			eventQuery = string.Format("*[System/TimeCreated/@SystemTime > '{0}'] and *[System/TimeCreated/@SystemTime <= '{1}'] and *[System/Level <= {2}]", startTime.ToUniversalTime().ToString("o"), endTime.ToUniversalTime().ToString("o"), maxLevel.ToString());
+			if (bLogAlways)
+			{ eventQuery = string.Format("*[System/TimeCreated/@SystemTime > '{0}'] and *[System/TimeCreated/@SystemTime <= '{1}'] and *[System/Level <= {2}]", startTime.ToUniversalTime().ToString("o"), endTime.ToUniversalTime().ToString("o"), maxLevel.ToString()); }
+			else
+			{ eventQuery = string.Format("*[System/TimeCreated/@SystemTime > '{0}'] and *[System/TimeCreated/@SystemTime <= '{1}'] and *[System/Level <= {2}] and *[System/Level > 0]", startTime.ToUniversalTime().ToString("o"), endTime.ToUniversalTime().ToString("o"), maxLevel.ToString()); }
+		}
 
 		// define event log query
 		EventLogQuery eventLogQuery = new EventLogQuery(logName, PathType.LogName, eventQuery);

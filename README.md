@@ -1,15 +1,15 @@
 # GetAllEvents
-**Version 1.0.0.2, 2020-01-12 by Markus Scholtes**
+**Version 1.0.1.0, 2022-08-20 by Markus Scholtes**
 
 C# command line tool to query the events of all event logs ordered by time and export to text or csv file.
 
-**New in V1.0.0.2:** Display in graphical (WPF) grid view.
+**New in V1.0.1.0:** Omit Security log and events of log level LogAlways per default for overview reasons
 
 ****
 
 ## Download:
 Download binaries from the Script Center web page
-[GetAllEvents: Query all events from all event logs](https://github.com/MScholtes/TechNet-Gallery) or compile yourself...
+[GetAllEvents: Query all events from all event logs]( https://gallery.technet.microsoft.com/scriptcenter/GetAllEvents-Query-all-d0a40b20) or compile yourself...
 
 ## Generate:
 Compile with Compile.bat (no visual studio needed, but .Net 4.0).
@@ -21,6 +21,8 @@ There is a .Net 3.5 version in folder Net3.5 that lacks grid view and credential
 ## Description:
 C# command line tool to query the events of all event logs ordered by time in text or csv format.
 
+Security log and events of level LogAlways are omitted per default.
+
 A remote computer can be accessed.
 
 ## Parameters:
@@ -28,7 +30,11 @@ A remote computer can be accessed.
 
 **-logname:\<LOGNAMES\>** comma separated list of event log names.<br />Queries all event logs if omitted (can be abbreviated as -log or -l or can be omitted).
 
+**-security** include Security log (can be abbreviated as -sec).
+
 **-level:\<LEVEL\>** queries up to level \<LEVEL\>. Queries all events if omitted.<br />Level: Critical - 1, Error - 2, Warning - 3, Informational - 4, Verbose - 5
+
+**-logalways** include events of level LogAlways (level 0).
 
 **-starttime:\<STARTTIME\>** start time of events to query (can be abbreviated as -start or -s).<br />Default is end time minus one hour.
 
@@ -64,6 +70,9 @@ GetAllEvents.exe /log=Security -Computer=REMOTE /D:DOM /U:Admin /P=NoP@ss
 ```
 
 ## History:
+### 1.0.1.0 / 2022-08-20
+Omit Security log and events of log level LogAlways per default for overview reasons
+
 ### 1.0.0.2 / 2020-01-12
 Display of results in Grid view (WPF)
 
